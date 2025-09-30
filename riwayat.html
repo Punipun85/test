@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="shortcut icon" href="asset/32223.png" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat</title>
+    <link href="style.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+     <script>
+    const user = JSON.parse(localStorage.getItem("userLogin"));
+    if (!user) {
+      alert ("silahkan login terlebih dahulu untuk mengakses History")
+      window.location.href = "login.html";
+    }
+  </script>
+</head>
+<body>
+    <!-- ======NAV STARTTT====== -->
+    <header class="font-poppins container-fluid navbar-custom fixed-top">
+      <nav class="navbar navbar-expand-lg navbar-custom py-3">
+        <div class="container">
+          <a class="navbar-brand d-flex align-items-center" href="#" id="lilogo" style="color: white;">
+            <img src="asset/Blue White Simple Minimalist Library Logo.png" alt="Logo">
+            A6 Library 
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav align-items-center">
+              <li class="nav-item">
+                <a class="nav-link" href="keranjang.html">
+                  <i class="bi bi-cart-fill" style="font-size: 20px;"></i>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="index.html">Beranda</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Layanan</a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="profile.html">Profile</a></li>
+                  <li><a class="dropdown-item" href="./#about">About</a></li>
+                  <li><a class="dropdown-item" href="koleksibuku.html">Koleksi Digital</a></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="riwayat.html">History</a>
+              </li>
+              <li class="nav-item" id="loginLogoutContainer" class="dropdown">
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <!-- =============NAV END=========== -->
+
+     <div class="container mt-4">
+       <center> <h2>Riwayat Peminjaman</h2> </center>
+        <div id="daftarRiwayat"></div>
+    </div>
+
+    <script src="perpus.js"></script>
+    <script>
+    const daftarRiwayat = document.getElementById("daftarRiwayat");
+    const riwayat = JSON.parse(localStorage.getItem("riwayatPeminjaman")) || [];
+    const pengembalian = JSON.parse(localStorage.getItem("riwayatPengembalian")) || [];
+
+    function hitungTenggat(tanggalStr) {
+        const tanggalPinjam = new Date(tanggalStr);
+        tanggalPinjam.setDate(tanggalPinjam.getDate() + 7);
+        return tanggalPinjam.toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric"
+        });
+    }
+
+    function kembalikanBuku(index) {
+        const kembali = riwayat.splice(index, 1)[0];
+        kembali.tanggalKembali = new Date().toLocaleString("id-ID", {
+            day: "2-digit", month: "long", year: "numeric",
+            hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+        pengembalian.push(kembali);
+        localStorage.setItem("riwayatPeminjaman", JSON.stringify(riwayat));
+        localStorage.setItem("riwayatPengembalian", JSON.stringify(pengembalian));
+        location.reload();
+    }
+
+    function tampilRiwayat(riwayatData, judul, isKembalian = false) {
+        let html = `<h3 class="mt-5">${judul}</h3>`;
+        if (riwayatData.length === 0) {
+            html += "<p>Tidak ada data.</p>";
+        } else {
+            riwayatData.forEach((checkout, i) => {
+                const tenggat = hitungTenggat(checkout.waktuISO);
+                html += `<h5 class="mt-4">Peminjaman ke-${i + 1} (${checkout.waktuTampil})</h5>`;
+                if (isKembalian) {
+                    html += `<p><strong>Dikembalikan pada:</strong> ${checkout.tanggalKembali}</p>`;
+                } else {
+                    html += `<p><strong>Tenggat Pengembalian:</strong> ${tenggat}</p>`;
+                }
+                html += `
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Gambar</th>
+                                <th>Judul</th>
+                                <th>Penulis</th>
+                                <th>Tahun</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                checkout.daftarBuku.forEach(buku => {
+                    html += `
+                        <tr>
+                            <td><img src="${buku.gambar}" class="gambar-buku" width="60"></td>
+                            <td>${buku.judul}</td>
+                            <td>${buku.penulis}</td>
+                            <td>${buku.tahun}</td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody></table>`;
+                if (!isKembalian) {
+                    html += `<button class="btn btn-success" onclick="kembalikanBuku(${i})">Kembalikan Buku</button>`;
+                }
+            });
+        }
+        return html;
+    }
+
+    daftarRiwayat.innerHTML = tampilRiwayat(riwayat, "Riwayat Peminjaman Aktif") +
+                               tampilRiwayat(pengembalian, "Buku yang Sudah Dikembalikan", true);
+
+    riwayat.forEach((checkout) => {
+    const tenggatDate = new Date(checkout.waktuISO);
+    tenggatDate.setDate(tenggatDate.getDate() + 7);
+
+    const sekarang = new Date();
+    const selisih = tenggatDate - sekarang;
+    const satuHari = 1000 * 60 * 60 * 24;
+
+    if (selisih > 0 && selisih <= satuHari) {
+        checkout.daftarBuku.forEach((buku) => {
+            alert(`⚠️ Peminjaman buku "${buku.judul}" akan segera berakhir. Segera kembalikan agar tidak terkena denda!`);
+        });
+    }
+});
+                           
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+</body>
+</html>
